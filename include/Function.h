@@ -3,31 +3,37 @@
 #include <string>
 #include <Eigen/Core>
 #include <exprtk/exprtk.hpp>
+
+#include "CalculationMethods.h"
+
 #include "Mesh.h"
+#include "Variable.h"
+#include "Surface.h"
 
 using namespace Eigen;
-using namespace exprtk;
 
 class Function 
 {
     public:
-        Function(
-            std::string name, 
-            std::string exprString, 
-            uint8_t inDim, 
-            uint8_t outDim, 
-            uint16_t typeCode); 
-        void UpdateFunction(std::string name, std::string newExpression);
-        float Evaluate(VectorXf inputVector);
+        Function(std::string name, std::string exprString); 
+        
+        void UpdateFunction();
+        void Draw();
+
+        float Evaluate(VectorXf &inputVector) const;
 
         std::string name;
         std::string expr;
-        uint16_t typeCode;
-    private:
-        std::vector<float> inputs;
-        symbol_table<float> symbolTable;
-        expression<float> func;
 
-        uint8_t inDim;
-        uint8_t outDim;
+        std::vector<Variable> variables;
+        
+    private:
+        void GetForm();
+
+        exprtk::symbol_table<float> symbolTable;
+
+        mutable std::vector<float> inputs;
+
+        exprtk::expression<float> func;
+        Surface form;
 };
