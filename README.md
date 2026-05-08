@@ -1,3 +1,3 @@
 # liber
 
-A lightweight R^n to R^n graphing calculator written in C++.
+An R^n to R^n graphing calculator written in C++.
