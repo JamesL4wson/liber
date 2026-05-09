@@ -15,9 +15,12 @@ namespace CalculationMethods
 
     void GetVectors(const Function &function)
     {
-        initalPosition.resize(3);
-        initalPosition << -5, -5, -5;
-
+        initalPosition.resize(function.variables.size());
+        for (size_t i = 0; i < function.variables.size(); i++)
+        {
+            initalPosition[i] = function.variables[i].min;
+        }
+        
         MarchingCubes::NaiveMarch(function);
     }
 

@@ -8,14 +8,21 @@ Function::Function(std::string name, std::string exprString)
 
 void Function::UpdateFunction() 
 {
+    Variable var = {-5, 5, *"x", 0};
+    variables.push_back(var);
+    var = {-5, 5, *"y", 0};
+    variables.push_back(var);
+    var = {-5, 5, *"z", 0};
+    variables.push_back(var);
+
     exprtk::parser<float> parser;
 
     symbolTable = exprtk::symbol_table<float>();
     inputs = std::vector<float>(variables.size());
 
     for (size_t i = 0; i < variables.size(); i++)
-    {
-        symbolTable.add_variable(std::to_string(variables[i].symbol), inputs[i]);
+    { 
+        symbolTable.add_variable(std::string(1, variables[i].symbol), inputs[i]);
     }
 
     func = exprtk::expression<float>();

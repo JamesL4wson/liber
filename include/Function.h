@@ -5,7 +5,6 @@
 #include <exprtk/exprtk.hpp>
 
 #include "CalculationMethods.h"
-
 #include "Mesh.h"
 #include "Variable.h"
 #include "Surface.h"

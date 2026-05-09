@@ -23,6 +23,7 @@ class Mesh
         void GenBuffers();
         void UpdateBuffers();
 
+        static std::vector<Vector3f> GetNormals(const std::vector<Vector3f> &vertices, const std::vector<uint32_t> &indices);
         static std::vector<uint32_t> TrisFromVerts(int width, int length);
         
         std::vector<Vertex> vertices;

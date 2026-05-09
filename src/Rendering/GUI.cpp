@@ -95,7 +95,7 @@ namespace GUI
                     the later changed. If an equation is added at init then any later 
                     changes including invalid or null strings work as expected.
                 */
-                plot.functions.emplace_back("", "sin(x0)+cos(x1)-x2");
+                plot.functions.emplace_back("", "sin(x)+cos(y)-z");
             }
             
             for (int i = 0; i < plot.functions.size(); i++) 

@@ -5,6 +5,8 @@
 
 #include "Shader.h"
 
+using namespace Eigen;
+
 const char* fragmentShaderCode = {
 	"#version 330 core\n"
 
@@ -114,13 +116,13 @@ void Shader::SetValue(const std::string& name, float value)
 }
 
 
-void Shader::SetValue(const std::string& name, glm::vec3 values) 
+void Shader::SetValue(const std::string& name, Vector3f values) 
 {
-	glUniform3f(glGetUniformLocation(programId, name.c_str()), values.x, values.y, values.z);
+	glUniform3f(glGetUniformLocation(programId, name.c_str()), values[0], values[1], values[2]);
 }
 
-void Shader::SetValue(const std::string& name, glm::mat4 matrix) 
+void Shader::SetValue(const std::string& name, Matrix4f matrix) 
 {
-	glUniformMatrix4fv(glGetUniformLocation(programId, name.c_str()), 1, GL_FALSE, glm::value_ptr(matrix));
+	glUniformMatrix4fv(glGetUniformLocation(programId, name.c_str()), 1, GL_FALSE, matrix.data());
 }
  

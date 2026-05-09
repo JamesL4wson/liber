@@ -12,7 +12,7 @@ struct Variable
 
         To impliment a new mapping, impliment a method for translating
         output vectors to the appropriate form for that map in 
-        Function.GetForm(). Then add the mapping code here.
+        namespace TranslateVectors below. Then add the mapping code here.
 
         0: (default)
             Variable is an abstract parameter and maps to no
@@ -53,3 +53,8 @@ struct Variable
 
     */
 };
+
+namespace TranslateVectors
+{
+    
+}

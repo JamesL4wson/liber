@@ -1,4 +1,4 @@
-#include <glm/glm.hpp>
+#include <Eigen/Core>
 #include <string>
 
 class Shader 
@@ -8,8 +8,8 @@ class Shader
         void Compile();
         
         void SetValue(const std::string& name, float value);
-        void SetValue(const std::string& name, glm::vec3 values);
-        void SetValue(const std::string& name, glm::mat4 matrix);
+        void SetValue(const std::string& name, Eigen::Vector3f values);
+        void SetValue(const std::string& name, Eigen::Matrix4f matrix);
         
     private: 
         uint32_t programId;

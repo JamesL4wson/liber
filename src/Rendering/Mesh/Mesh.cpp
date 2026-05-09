@@ -38,6 +38,35 @@ void Mesh::Draw()
 	glBindVertexArray(0);
 }
 
+std::vector<Vector3f> Mesh::GetNormals(const std::vector<Vector3f> &vertices, const std::vector<uint32_t> &indices)
+{
+	std::vector<Vector3f> normals(vertices.size());
+    for (size_t i = 0; i < vertices.size(); i++)
+    {
+        normals[i] = Vector3f(0.0f, 0.0f, 0.0f);
+    }
+    
+    for (size_t i = 0; i < indices.size(); i += 3)
+    {
+        Vector3f A = vertices[indices[i + 0]];
+        Vector3f B = vertices[indices[i + 1]];
+        Vector3f C = vertices[indices[i + 2]];
+
+        Vector3f normal = (A - B).cross(A - C);
+
+        normals[indices[i + 0]] += normal;
+        normals[indices[i + 1]] += normal;
+        normals[indices[i + 2]] += normal;
+    }
+
+    for (size_t i = 0; i < vertices.size(); i++) 
+    {
+        normals[i].normalize();
+    }
+
+	return normals;
+}
+
 std::vector<uint32_t> Mesh::TrisFromVerts(int width, int length) 
 {
 	int vert = 0;

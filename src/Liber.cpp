@@ -1,9 +1,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <iostream>
-#include <vector>
-
 #include "Camera.h"
 #include "Shader.h"
 #include "Plot.h"
@@ -11,10 +8,10 @@
 
 void InitWindow();
 void UpdateLoop();
+void DrawModels();
 void FramebufferSizeCallback(GLFWwindow *window, int width, int height);
 void CursorPositionCallback(GLFWwindow *window, double mouseX, double mouseY);
 void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
-void DrawModels();
 
 float WIDTH = 1200;
 float HEIGHT = 800;
@@ -85,8 +82,8 @@ void InitWindow()
 //models
 void DrawModels()
 {
-	shader.SetValue("lightPos", glm::vec3(0.0, 0.0, 3.0f));
-	shader.SetValue("lightColor", glm::vec3(1.0f));
+	shader.SetValue("lightPos", Vector3f(0, 0.0, 3.0f));
+	shader.SetValue("lightColor", Vector3f(1.0f, 1.0f, 1.0f));
 	shader.SetValue("ambientStrength", 0.5f);
 	shader.SetValue("view", camera.GetViewMatrix());
 	shader.SetValue("projection", camera.GetProjectionMatrix((float)WIDTH, (float)HEIGHT));
@@ -109,20 +106,19 @@ void FramebufferSizeCallback(GLFWwindow *window, int width, int height)
 
 void CursorPositionCallback(GLFWwindow *window, double mouseX, double mouseY)
 {
-	int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-	if (state == GLFW_PRESS)
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 	{	
 		float mouseXDelta = mouseX - previousMouseX;
-		float mouseYDelta = - mouseY + previousMouseY;
+		float mouseYDelta = mouseY - previousMouseY;
 		
-		bool rotate = false;
-		state = glfwGetKey(window, GLFW_KEY_LEFT_SUPER);
-		if (state == GLFW_PRESS)
+		if (glfwGetKey(window, GLFW_KEY_LEFT_SUPER) == GLFW_PRESS)
 		{
-			rotate = true;
+			camera.Rotate(mouseXDelta, mouseYDelta);
 		}
-
-		camera.CalculateMovement(mouseXDelta, mouseYDelta, rotate);
+		else
+		{
+			camera.Translate(mouseXDelta, mouseYDelta);
+		}
 	}
 
 	previousMouseY = mouseY;
