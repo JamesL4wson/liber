@@ -1,17 +1,23 @@
-#include <glm/glm.hpp>
-#include "Mesh.h"
-#include "Camera.h"
+#pragma once
 
-class Curve : public Mesh
+#include <vector>
+#include <Eigen/Core>
+#include <Mesh.h>
+
+class Curve 
 {
     public:
-        Curve(Camera &mainCamera);
-        void UpdateMeshData(std::vector<Vector3f> vertices, std::vector<uint32_t> triangles);
-        void SetLineWidth();
+        Curve();
+        void UpdateCurveData(
+            std::vector<Eigen::Vector3f> vertPositions, 
+            std::vector<Eigen::Vector3f> colors = {});
+        
+        void Draw();
     private:
-        void FindForwardVectors();
-        std::vector<Vector3f> forwardVectorsMain;
+        void GenBuffers();
+        void UpdateBuffers();
 
-        Camera &mainCamera;
-        float scalar = 1.5f;
+        uint32_t vao{}, vbo{};
+
+        std::vector<Vertex> vertices;      
 };

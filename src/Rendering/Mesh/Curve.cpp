@@ -1,66 +1,68 @@
 #include <glad/glad.h>
 #include "Curve.h"
 
-Curve::Curve(Camera &mainCamera) 
-    : mainCamera(mainCamera)
+using namespace Eigen;
+
+Curve::Curve() 
 {
     GenBuffers();
 }
 
-void Curve::UpdateMeshData(std::vector<Vector3f> vertPositions, std::vector<uint32_t> triangles) 
-{    
-    indices = TrisFromVerts(vertices.size() - 1, 1);
+void Curve::GenBuffers()
+{
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
 
-    std::vector<Vector3f> normals(vertPositions.size());
-    normals = GetNormals(vertPositions, indices);
-    
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 
+		(void*)offsetof(Vertex, position));
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 
+		(void*)offsetof(Vertex, normal));
+	glEnableVertexAttribArray(1); 
+
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+		(void*)offsetof(Vertex, color));
+	glEnableVertexAttribArray(2); 
+}
+
+void Curve::UpdateBuffers()
+{
+    glBindVertexArray(vao);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
+    glBindVertexArray(0);
+}
+
+void Curve::Draw()
+{
+    glBindVertexArray(vao);
+    glDrawArrays(GL_LINE_STRIP, 0, vertices.size());
+    glBindVertexArray(0);
+}
+
+void Curve::UpdateCurveData(
+        std::vector<Vector3f> vertPositions, 
+        std::vector<Vector3f> colors)
+{
     vertices.resize(vertPositions.size());
     for (size_t i = 0; i < vertPositions.size(); i++)
     {
         vertices[i].position = vertPositions[i];
-        vertices[i].color = Vector3f(1.0f, 1.0f, 1.0f);
-        vertices[i].normal = normals[i];
     }
-
-    FindForwardVectors();
-}
-
-void Curve::SetLineWidth()
-{
-    std::vector<Vector3f> verticesRibbon(vertices.size() * 2);
-
-    for (int i = 0; i < vertices.size(); i++)
+    
+    for (size_t i = 0; i < vertPositions.size(); i++)
     {
-        float depth = (vertices[i].position - mainCamera.position).dot(mainCamera.forward);
-        float width = scalar * depth / (float)800;
-
-        Vector3f outVector = mainCamera.position - vertices[i].position;
-        Vector3f side = (forwardVectorsMain[i].cross(outVector)).normalized() * width;
-
-        verticesRibbon[i] = vertices[i].position - side;
-        verticesRibbon[i + vertices.size()] = vertices[i].position + side;            
+        vertices[i].color = colors[i];
     }
 
+    for (size_t i = 0; i < vertPositions.size(); i++)
+    {
+        vertices[i].normal = (vertPositions[i + 1] - vertPositions[i]).normalized();
+    }
+    
     UpdateBuffers();
-}
-
-void Curve::FindForwardVectors()
-{
-    std::vector<Vector3f> forwardVectors(vertices.size());
-
-    Vector3f forwardVector = (vertices[1].position - vertices[0].position).normalized();
-    forwardVectors[0] = forwardVector;      
-
-    for (int k = 1; k < vertices.size() - 1; k++)
-    {
-        Vector3f dir1 = vertices[k].position - vertices[k - 1].position;
-        Vector3f dir2 = vertices[k + 1].position - vertices[k].position;
-        forwardVector = (dir1 + dir2).normalized();
-        forwardVectors[k] = forwardVector;
-    }
-
-    forwardVector = (vertices[vertices.size() - 1].position - vertices[vertices.size() - 2].position).normalized();       
-    forwardVectors[vertices.size() - 1] = forwardVector;
-
-    forwardVectorsMain = forwardVectors;
 }

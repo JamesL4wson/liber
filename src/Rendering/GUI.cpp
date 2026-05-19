@@ -39,6 +39,8 @@ namespace GUI
         Arial = io.Fonts->AddFontFromFileTTF("/Library/Fonts/Arial Bold.ttf");
         NotoMath = io.Fonts->AddFontFromFileTTF("/Library/Fonts/NotoSansMath-Regular.ttf", 25);
         LatexMath = io.Fonts->AddFontFromFileTTF("/Library/Fonts/cmu.serif-bolditalic.ttf");
+        io.Fonts->AddFontDefault();
+
 
         style.FontScaleMain = 1;
 
@@ -90,12 +92,7 @@ namespace GUI
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + size.x - 90);
             if (ImGui::Button("+", ImVec2(25, 20)))
             {
-                /*
-                    requires an equation at init time or the function seg faults when
-                    the later changed. If an equation is added at init then any later 
-                    changes including invalid or null strings work as expected.
-                */
-                plot.functions.emplace_back("", "sin(x)+cos(y)-z");
+                plot.functions.emplace_back();
             }
             
             for (int i = 0; i < plot.functions.size(); i++) 
@@ -113,6 +110,8 @@ namespace GUI
 
     void DrawFunctionWidget(float windowWidth, Function &function, int index)
     {
+        using namespace std::string_literals;
+
         ImDrawList *drawList = ImGui::GetWindowDrawList();
 
         float localVarMin = 0;
@@ -154,9 +153,14 @@ namespace GUI
             ImGui::SameLine();
 
             ImGui::SetCursorPosX(mainContWidth - 70);
-            ImGui::PushFont(NotoMath);
-            // ImGui::Text("ℝ%d→ℝ%d", function.inDim, function.outDim);
-            ImGui::Text("ℝ%d→ℝ%d", 3, 0);
+            ImGui::PushFont(Arial);
+
+            int inDim = function.localVariables.size() + function.globalVariables.size() - function.expressions.size();
+            int outDim = function.expressions.size();
+
+            // std::string text = "ℝ" + SuperScriptDigit(inDim) + "→ℝ" + SuperScriptDigit(outDim);
+            std::string text = "R" + SuperScriptDigit(inDim) + "→R" + SuperScriptDigit(outDim);
+            ImGui::Text("%s", text.c_str());
             ImGui::PopFont();
 
             ImGui::SameLine();
@@ -196,12 +200,12 @@ namespace GUI
 
             ImGui::SetCursorPos(ImVec2(3, 60));
             text = "##exprTextInput" + std::to_string(index);
-            ImGui::InputText(text.c_str(), &function.expr);
+            // ImGui::InputText(text.c_str(), &function.expressions[0]);
 
-            if (ImGui::IsItemDeactivatedAfterEdit())
-            {
-                function.UpdateFunction();
-            }
+            // if (ImGui::IsItemDeactivatedAfterEdit())
+            // {
+            //     function.UpdateFunction();
+            // }
 
             drawList->AddRectFilled(
                 ImVec2(ImGui::GetWindowPos().x + 10, ImGui::GetWindowPos().y + 25),
@@ -220,5 +224,23 @@ namespace GUI
             ImVec2(pos.x + size.x, pos.y + size.y + 5),
             IM_COL32(0,0,0,80), 8
         );
+    }
+
+    std::string SuperScriptDigit(int digit)
+    {
+        switch (digit)
+        {
+            case 0: return "⁰";
+            case 1: return "¹";
+            case 2: return "²";
+            case 3: return "³";
+            case 4: return "⁴";
+            case 5: return "⁵";
+            case 6: return "⁶";
+            case 7: return "⁷";
+            case 8: return "⁸";
+            case 9: return "⁹";
+            default:  return "?";
+        }
     }
 }

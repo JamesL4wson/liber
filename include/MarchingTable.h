@@ -4,10 +4,10 @@
 
 namespace CubesTable
 {
-    inline int GetCase(const float *cornerValues) 
+    inline int GetCase(const float *cornerValues, const int whatPoly) 
     {
         int caseNumber = 0;
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < whatPoly; i++)
         {
             if (cornerValues[i] > 0)
             {
@@ -306,6 +306,17 @@ namespace CubesTable
         {0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
         {0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
         {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
+    };
+
+    const int Verts[8][4] = {
+        {-1,-1,-1,-1},
+        { 0, 2, 0, 1},
+        { 1, 0, 1, 2},
+        { 2, 1, 2, 0},
+        { 2, 1, 2, 0},
+        { 1, 0, 1, 2},
+        { 0, 2, 0, 1},
+        {-1,-1,-1,-1}
     };
 
     const int TraverseCube[8][2] = {

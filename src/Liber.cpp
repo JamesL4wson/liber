@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include "Camera.h"
+#include "Curve.h"
 #include "Shader.h"
 #include "Plot.h"
 #include "GUI.h"
@@ -20,7 +21,8 @@ float previousMouseX;
 float previousMouseY;
 
 Camera camera;
-Shader shader;
+Shader surfaceShader;
+Shader curveShader;
 Plot plot;
 GLFWwindow *window;
 
@@ -32,14 +34,28 @@ int main()
 
 void UpdateLoop() 
 {
+	std::vector<Variable> variables;
+	Variable var = {-5, 5, *"x", 0};
+	variables.push_back(var);
+	var = {-5, 5, *"y", 0};
+	variables.push_back(var);
+	var = {-5, 5, *"z", 0};
+	variables.push_back(var);
+	// var = {-5, 5, *"w", 0};
+	// variables.push_back(var);
+
+	plot.globalVariables = variables;
+	Function::globalVariables = plot.globalVariables;
+	
     while (!glfwWindowShouldClose(window))
 	{
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
-
+		
 		glfwPollEvents();
 		
 		DrawModels();
+		
 
 		GUI::DrawUI(plot);
 		
@@ -75,23 +91,34 @@ void InitWindow()
 	//IMGUI
 	GUI::InitalizeUI(window);
 
-	//SHADER
-	shader.Compile();
+	//SHADERS
+	surfaceShader.Compile(ShaderSrc::surfaceShaderSrc, 2);
+	curveShader.Compile(ShaderSrc::curveShaderSrc, 3);
 }
 
 //models
 void DrawModels()
 {
-	shader.SetValue("lightPos", Vector3f(0, 0.0, 3.0f));
-	shader.SetValue("lightColor", Vector3f(1.0f, 1.0f, 1.0f));
-	shader.SetValue("ambientStrength", 0.5f);
-	shader.SetValue("view", camera.GetViewMatrix());
-	shader.SetValue("projection", camera.GetProjectionMatrix((float)WIDTH, (float)HEIGHT));
-	shader.SetValue("cameraPos", camera.position);
 	
 	for (size_t i = 0; i < plot.functions.size(); i++)
 	{
+		glUseProgram(surfaceShader.programId);
+		surfaceShader.SetValue("lightPos", camera.position);
+		surfaceShader.SetValue("lightColor", Eigen::Vector3f(1.0f, 1.0f, 1.0f));
+		surfaceShader.SetValue("ambientStrength", 0.5f);
+		surfaceShader.SetValue("view", camera.GetViewMatrix());
+		surfaceShader.SetValue("projection", camera.GetProjectionMatrix((float)WIDTH, (float)HEIGHT));
+		surfaceShader.SetValue("cameraPos", camera.position);
+		
 		plot.functions[i].Draw();
+	
+		glUseProgram(curveShader.programId);
+		curveShader.SetValue("viewportSize", Eigen::Vector2f(WIDTH, HEIGHT));
+		curveShader.SetValue("width", 4);
+		curveShader.SetValue("view", camera.GetViewMatrix());
+		curveShader.SetValue("projection", camera.GetProjectionMatrix((float)WIDTH, (float)HEIGHT));
+		
+		plot.functions[0].Draw2();
 	}
 }
 

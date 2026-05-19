@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <Eigen/Core>
+
 struct Variable
 {
     float min;
@@ -53,8 +56,3 @@ struct Variable
 
     */
 };
-
-namespace TranslateVectors
-{
-    
-}

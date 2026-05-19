@@ -14,4 +14,6 @@ namespace GUI
     void DrawUI(Plot &plot);
     void DrawFunctionWidget(float windowWidth, Function &function, int index);
     void AddDropShadow(ImVec2 pos, ImVec2 size, ImDrawList *drawList);
+
+    std::string SuperScriptDigit(int digit);
 }

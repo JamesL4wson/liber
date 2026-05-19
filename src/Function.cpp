@@ -1,51 +1,79 @@
 #include "Function.h"
+#include "CalculationMethods.h"
 
-Function::Function(std::string name, std::string exprString) 
-    :name(name), expr(exprString), form(Surface())
+#include "VectorConversions.h"
+
+#include <iostream>
+
+using namespace Eigen;
+
+std::vector<Variable> tmp;
+std::vector<Variable>& Function::globalVariables = tmp;
+
+Function::Function() 
+    :name(), expressions(1)
 {
     UpdateFunction();
-};
+}
 
 void Function::UpdateFunction() 
 {
-    Variable var = {-5, 5, *"x", 0};
-    variables.push_back(var);
-    var = {-5, 5, *"y", 0};
-    variables.push_back(var);
-    var = {-5, 5, *"z", 0};
-    variables.push_back(var);
+    // expressions[0] = "-(2/15)*cos(u)*(3*cos(v) - 30*sin(u) + 90*cos(u)^4*sin(u) - 60*cos(u)^6*sin(u) + 5*cos(u)*cos(v)*sin(u))";
+    // expressions.emplace_back("-(1/15)*sin(u)*(3*cos(v) - 3*cos(u)^2*cos(v) - 48*cos(u)^4*cos(v) + 48*cos(u)^6*cos(v) - 60*sin(u) + 5*cos(u)*cos(v)*sin(u) - 5*cos(u)^3*cos(v)*sin(u) - 80*cos(u)^5*cos(v)*sin(u) + 80*cos(u)^7*cos(v)*sin(u))");
+    // expressions.emplace_back("(2/15)*(3 + 5*cos(u)*sin(u))*sin(v)");
+    // expressions.emplace_back("sin(v)");
 
-    exprtk::parser<float> parser;
+    expressions[0] = "sin(x) + cos(y) - z";
+    expressions.emplace_back("x^2 - y^2 - z");
 
-    symbolTable = exprtk::symbol_table<float>();
-    inputs = std::vector<float>(variables.size());
-
-    for (size_t i = 0; i < variables.size(); i++)
+    input = std::vector<float>(globalVariables.size() + localVariables.size());
+    
+    exprtk::symbol_table<float> symbolTable;
+    for (size_t i = 0; i < globalVariables.size(); i++)
     { 
-        symbolTable.add_variable(std::string(1, variables[i].symbol), inputs[i]);
+        symbolTable.add_variable(
+            std::string(1, globalVariables[i].symbol), 
+            input[i]
+        );
+    } 
+    for (size_t i = 0; i < localVariables.size(); i++)
+    { 
+        symbolTable.add_variable(
+            std::string(1, localVariables[i].symbol), 
+            input[i + globalVariables.size()]
+        );
+    }
+    
+    funcs.resize(expressions.size());
+    exprtk::parser<float> parser;
+    for (size_t i = 0; i < expressions.size(); i++) 
+    {
+        funcs[i] = exprtk::expression<float>();
+        funcs[i].register_symbol_table(symbolTable);
+        
+        parser.compile(expressions[i], funcs[i]);
     }
 
-    func = exprtk::expression<float>();
-    func.register_symbol_table(symbolTable);
-
-    parser.compile(expr, func);
-
-    GetForm();
+    CalculateForm();
 }
 
-void Function::GetForm() 
+void Function::CalculateForm() 
 {   
-	CalculationMethods::GetVectors(*this);
+    CalculationMethods::GetVectors(*this);
 
-    std::vector<Vector3f> vects(CalculationMethods::vectors.size());
-    for (size_t i = 0; i < CalculationMethods::vectors.size(); i++)
-    {
-        vects[i][0] = CalculationMethods::vectors[i][0];
-        vects[i][1] = CalculationMethods::vectors[i][1];
-        vects[i][2] = CalculationMethods::vectors[i][2];
-    }
+    std::vector<Vector3f> vects = 
+        ConvertTo::Positions(CalculationMethods::interCurve, 0, 1, 2);
+    std::vector<Vector3f> colors = 
+        ConvertTo::Colors(CalculationMethods::interCurve, 1);
 
-	form.UpdateMeshData(vects,  CalculationMethods::triangles);
+    form2.UpdateCurveData(vects, colors);
+
+    std::vector<Vector3f> vects2 = 
+        ConvertTo::Positions(CalculationMethods::vectors, 0, 1, 2);
+    std::vector<Vector3f> colors2 = 
+        ConvertTo::Colors(CalculationMethods::vectors);
+
+	form.UpdateMeshData(vects2, colors2, CalculationMethods::triangles);
 }
 
 void Function::Draw()
@@ -53,11 +81,20 @@ void Function::Draw()
     form.Draw();
 }
 
-float Function::Evaluate(VectorXf &inputVector) const
+void Function::Draw2()
 {
-    for (size_t i = 0; i < inputs.size(); i++) 
-    {
-        inputs[i] = inputVector[i];
-    }
-    return func.value();
+    form2.Draw();
 }
+
+VectorXf Function::Evaluate(VectorXf &inputVector) const
+{
+    input.assign(inputVector.data(), inputVector.data() + inputVector.size());
+
+    VectorXf output(funcs.size());
+    for (size_t k = 0; k < funcs.size(); k++)
+    {
+        output[k] = funcs[k].value();
+    }
+    return output;
+}
+

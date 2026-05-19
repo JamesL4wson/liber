@@ -2,6 +2,9 @@
 #include "MarchingTable.h"
 
 #include <Eigen/Core>
+#include <iostream>
+#include <cmath>
+#include <chrono>
 
 namespace CalculationMethods 
 {
@@ -11,21 +14,29 @@ namespace CalculationMethods
     int size = 100;
     
     std::vector<VectorXf> vectors = {};
-    std::vector<uint32_t> triangles = {};   
+    std::vector<uint32_t> triangles = {};
+
+    std::vector<VectorXf> interCurve = {};
+    std::vector<VectorXf> interPoints = {};
 
     void GetVectors(const Function &function)
     {
-        initalPosition.resize(function.variables.size());
-        for (size_t i = 0; i < function.variables.size(); i++)
+        initalPosition.resize(function.globalVariables.size());
+        for (size_t i = 0; i < function.globalVariables.size(); i++)
         {
-            initalPosition[i] = function.variables[i].min;
+            initalPosition[i] = function.globalVariables[i].min;
         }
-        
+
+        // MarchingCubes::CheckCube(function, 5.0f, initalPosition);
         MarchingCubes::NaiveMarch(function);
+        MarchingCubes::FindInterCurve(function);
+        // DirectSampling::CalculateVectors(function);
     }
 
     namespace MarchingCubes 
     {
+        //Surface Extraction
+
         void NaiveMarch(const Function &function)
         {
             Vector3f subSpacePos;
@@ -51,7 +62,7 @@ namespace CalculationMethods
                                 basis[2] * subSpaceCorner[2] +
                                 initalPosition);
                             
-                            cubeCorners[i] = function.Evaluate(nSpaceCorner);
+                            cubeCorners[i] = function.Evaluate(nSpaceCorner)[0];
                         }
                         
                         GetVertices(subSpacePos, cubeCorners, stepSize);
@@ -74,7 +85,7 @@ namespace CalculationMethods
                     basis[1] * subSpaceCorner[1] + 
                     basis[2] * subSpaceCorner[2]);
 
-                cubeCorners[0] = function.Evaluate(nSpaceCorner);
+                cubeCorners[0] = function.Evaluate(nSpaceCorner)[0];
 
                 for (size_t i = 1; i < 8; i++)
                 {
@@ -84,7 +95,7 @@ namespace CalculationMethods
                         basis[1] * subSpaceCorner[1] + 
                         basis[2] * subSpaceCorner[2]);
 
-                    cubeCorners[i] = function.Evaluate(nSpaceCorner);
+                    cubeCorners[i] = function.Evaluate(nSpaceCorner)[0];
 
                     if ((cubeCorners[i] > 0) != (cubeCorners[0] > 0) || cornersDiffer)
                     {
@@ -107,76 +118,134 @@ namespace CalculationMethods
 
         void FastCheckCube(const Function &function, float currentStep, Vector3f subSpaceCenter)
         {
-            int outputDimension = 3;
+            // int outputDimension = 3;
 
-            VectorXf nSpaceCorner(outputDimension);
-            float cubePoints[27];
+            // VectorXf nSpaceCorner(outputDimension);
+            // float cubePoints[27];
 
-            if (currentStep < stepSize) 
-            {
-                for (int i = 0; i < 27; i++)
-                {
-                    for (int k = 0; k < outputDimension; k++) 
-                    {
-                        nSpaceCorner[k] = (
-                            basis[0][k] * (subSpaceCenter[0] + CubesTable::Corners[i][0] * currentStep) + 
-                            basis[1][k] * (subSpaceCenter[1] + CubesTable::Corners[i][1] * currentStep) +
-                            basis[2][k] * (subSpaceCenter[2] + CubesTable::Corners[i][2] * currentStep));
-                    }
-                    cubePoints[i] = function.Evaluate(nSpaceCorner);
-                }
+            // if (currentStep < stepSize) 
+            // {
+            //     for (int i = 0; i < 27; i++)
+            //     {
+            //         for (int k = 0; k < outputDimension; k++) 
+            //         {
+            //             nSpaceCorner[k] = (
+            //                 basis[0][k] * (subSpaceCenter[0] + CubesTable::Corners[i][0] * currentStep) + 
+            //                 basis[1][k] * (subSpaceCenter[1] + CubesTable::Corners[i][1] * currentStep) +
+            //                 basis[2][k] * (subSpaceCenter[2] + CubesTable::Corners[i][2] * currentStep));
+            //         }
+            //         cubePoints[i] = function.Evaluate(nSpaceCorner)[0];
+            //     }
                 
-                float cubeCorners[8];
-                for (int i = 0; i < 8; i++)
-                {
-                    for (int k = 0; k < 8; k++)
-                    {
-                        cubeCorners[k] = cubePoints[CubesTable::BinCubes[i][k]];
-                    }
+            //     float cubeCorners[8];
+            //     for (int i = 0; i < 8; i++)
+            //     {
+            //         for (int k = 0; k < 8; k++)
+            //         {
+            //             cubeCorners[k] = cubePoints[CubesTable::BinCubes[i][k]];
+            //         }
 
-                    GetVertices(subSpaceCenter - (CubesTable::CentreToCorner[i] * currentStep), cubeCorners, currentStep);
-                }
-                return;
-            }
+            //         GetVertices(subSpaceCenter - (CubesTable::CentreToCorner[i] * currentStep), cubeCorners, currentStep);
+            //     }
+            //     return;
+            // }
 
-            for (int k = 0; k < outputDimension; k++) 
+            // for (int k = 0; k < outputDimension; k++) 
+            // {
+            //     nSpaceCorner[k] = (
+            //         basis[0][k] * (subSpaceCenter[0] + CubesTable::Corners[0][0] * currentStep) + 
+            //         basis[1][k] * (subSpaceCenter[1] + CubesTable::Corners[0][1] * currentStep) +
+            //         basis[2][k] * (subSpaceCenter[2] + CubesTable::Corners[0][2] * currentStep));
+            // }
+            // cubePoints[0] = function.Evaluate(nSpaceCorner)[0];
+
+            // for (int i = 1; i < 27; i++)
+            // {
+            //     for (int k = 0; k < outputDimension; k++) 
+            //     {
+            //         nSpaceCorner[k] = (
+            //             basis[0][k] * (subSpaceCenter[0] + CubesTable::Corners[i][0] * currentStep) + 
+            //             basis[1][k] * (subSpaceCenter[1] + CubesTable::Corners[i][1] * currentStep) +
+            //             basis[2][k] * (subSpaceCenter[2] + CubesTable::Corners[i][2] * currentStep));
+            //     }
+            //     cubePoints[i] = function.Evaluate(nSpaceCorner)[0];
+
+            //     if (cubePoints[i] != cubePoints[0]) 
+            //     {
+            //         for (int k = 0; k < CubesTable::NumAdjCubes[i]; k++)
+            //         {
+            //             //check that sub-cube hasn't already been checked
+
+            //             //move centre point
+            //             CheckCube(function, currentStep/2, subSpaceCenter);
+            //         }
+            //     }
+            // }
+        }
+
+        //Intersection Extraction
+
+        void FindInterCurve(const Function &function)
+        {
+            for (size_t i = 0; i < triangles.size(); i += 3)
             {
-                nSpaceCorner[k] = (
-                    basis[0][k] * (subSpaceCenter[0] + CubesTable::Corners[0][0] * currentStep) + 
-                    basis[1][k] * (subSpaceCenter[1] + CubesTable::Corners[0][1] * currentStep) +
-                    basis[2][k] * (subSpaceCenter[2] + CubesTable::Corners[0][2] * currentStep));
-            }
-            cubePoints[0] = function.Evaluate(nSpaceCorner);
+                float triCorners[3];
+                triCorners[0] = function.Evaluate(vectors[triangles[i + 0]])[1];
+                triCorners[1] = function.Evaluate(vectors[triangles[i + 1]])[1];
+                triCorners[2] = function.Evaluate(vectors[triangles[i + 2]])[1];
 
-            for (int i = 1; i < 27; i++)
-            {
-                for (int k = 0; k < outputDimension; k++) 
+                int caseNumber = CubesTable::GetCase(triCorners, 3);
+
+                if (caseNumber == 0 || caseNumber == 7) 
                 {
-                    nSpaceCorner[k] = (
-                        basis[0][k] * (subSpaceCenter[0] + CubesTable::Corners[i][0] * currentStep) + 
-                        basis[1][k] * (subSpaceCenter[1] + CubesTable::Corners[i][1] * currentStep) +
-                        basis[2][k] * (subSpaceCenter[2] + CubesTable::Corners[i][2] * currentStep));
+                    continue;
                 }
-                cubePoints[i] = function.Evaluate(nSpaceCorner);
 
-                if (cubePoints[i] != cubePoints[0]) 
+                Vector3f edgeStart = vectors[triangles[i + CubesTable::Verts[caseNumber][0]]];
+                Vector3f edgeEnd = vectors[triangles[i + CubesTable::Verts[caseNumber][1]]];
+
+                float t = (-triCorners[CubesTable::Verts[caseNumber][0]]
+                            / (triCorners[CubesTable::Verts[caseNumber][1]] 
+                                - triCorners[CubesTable::Verts[caseNumber][0]]));
+
+                Eigen::Vector3f vertex(
+                    edgeStart[0] + (edgeEnd[0] - edgeStart[0]) * t,
+                    edgeStart[1] + (edgeEnd[1] - edgeStart[1]) * t,
+                    edgeStart[2] + (edgeEnd[2] - edgeStart[2]) * t);
+                
+                interCurve.push_back(vertex);
+            }
+        }
+
+        void FindInterPoint(const Function &function)
+        {
+            for (size_t i = 0; i < interCurve.size(); i += 2)
+            {
+                float vertices[2];
+                vertices[0] = function.Evaluate(interCurve[i + 0])[2];
+                vertices[1] = function.Evaluate(interCurve[i + 1])[2];
+
+                if ((vertices[0] > 0) != (vertices[1] > 0))
                 {
-                    for (int k = 0; k < CubesTable::NumAdjCubes[i]; k++)
-                    {
-                        //check that sub-cube hasn't already been checked
+                    float t = -vertices[0] / (vertices[1] - vertices[0]);
 
-                        //move centre point
-                        CheckCube(function, currentStep/2, subSpaceCenter);
-                    }
+                    Eigen::Vector3f vertex(
+                        interCurve[i][0] + (interCurve[i + 1][0] - interCurve[i][0]) * t,
+                        interCurve[i][1] + (interCurve[i + 1][1] - interCurve[i][1]) * t,
+                        interCurve[i][2] + (interCurve[i + 1][2] - interCurve[i][2]) * t);
+
+                    interPoints.push_back(vertex);
                 }
             }
         }
 
-        void GetVertices(const Vector3f &subSpacePos, const float *cubeCorners, const float &currentStep) 
+        //Methods
+        
+        void GetVertices(const Vector3f &subSpacePos, const float *cubeCorners, float currentStep) 
         {
-            int caseNumber = CubesTable::GetCase(cubeCorners);
+            int caseNumber = CubesTable::GetCase(cubeCorners, 8);
 
-            if (caseNumber == 0 || caseNumber == 255)
+            if (caseNumber == 0 || caseNumber == 255) 
             {
                 return;
             }
@@ -193,10 +262,10 @@ namespace CalculationMethods
                 Vector3f edgeStart = subSpacePos + CubesTable::Edges[triTableValue][0] * currentStep;
                 Vector3f edgeEnd = subSpacePos + CubesTable::Edges[triTableValue][1] * currentStep;
 
-                float t = (-cubeCorners[CubesTable::EdgeToCorner[triTableValue][0]] 
+                float t = (-cubeCorners[CubesTable::EdgeToCorner[triTableValue][0]]
                             / (cubeCorners[CubesTable::EdgeToCorner[triTableValue][1]]
                                 - cubeCorners[CubesTable::EdgeToCorner[triTableValue][0]]));
-
+                
                 Eigen::Vector3f vertex(
                     edgeStart[0] + (edgeEnd[0] - edgeStart[0]) * t,
                     edgeStart[1] + (edgeEnd[1] - edgeStart[1]) * t,
@@ -205,54 +274,37 @@ namespace CalculationMethods
                 vectors.push_back(vertex);
                 triangles.push_back((uint32_t)(vectors.size() - 1));
             }
-    }
+        }
     }
 
     namespace DirectSampling
     {
         void CalculateVectors(const Function &function)
-        {
-            int inputDimension = 2;
-            vectors.reserve(std::powf((float)size, inputDimension));
-
+        {   
+            vectors.reserve(std::pow(size + 1, initalPosition.size()));
+            
             VectorXf inputVector = initalPosition;
-            Vector3i inputOdometer(inputDimension);
+            VectorXi inputOdometer(inputVector.size());
 
-            while (true)
+            for (size_t k = 0; k < vectors.capacity(); k++)
             {
-                VectorXf output(3);
-                output << inputVector[0], inputVector[1], function.Evaluate(inputVector);
-                vectors.push_back(output);
+                VectorXf outputVector = function.Evaluate(inputVector);
+                vectors.emplace_back(inputVector.size() + outputVector.size());
+                vectors.back() << inputVector, outputVector;
 
-                inputVector[0] += stepSize;
-                inputOdometer[0]++;
-
-                if (CheckDimension(inputVector, inputOdometer, 0))
+                for (size_t i = 0; i < inputVector.size(); i++)
                 {
-                    break;
+                    inputVector[i] += stepSize;
+                    inputOdometer[i]++;
+
+                    if (inputOdometer[i] < size + 1) {break;}
+                    else
+                    {
+                        inputVector[i] = initalPosition[i];
+                        inputOdometer[i] = 0;
+                    }
                 }
             }
-        }
-
-        bool CheckDimension(VectorXf &inputVector, Vector3i &inputOdometer, int dimension)
-        {
-            if (inputOdometer[dimension] > 5)
-            {
-                if (dimension == inputVector.size() - 1)
-                {
-                    return false;
-                }
-
-                inputVector[dimension] = -5;
-                inputOdometer[dimension] = 0;
-
-                inputVector[dimension + 1] += stepSize;
-                inputOdometer[dimension + 1]++;
-
-                CheckDimension(inputVector, inputOdometer, dimension + 1);
-            }
-
-            return true; 
         }
     }
 
